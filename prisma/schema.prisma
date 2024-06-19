@@ -27,6 +27,7 @@ model Movie {
 model User {
   id           Int            @id @default(autoincrement())
   name         String?
+  clerkID      String?        @unique
   UserOnMovies UserOnMovies[]
 }
 
