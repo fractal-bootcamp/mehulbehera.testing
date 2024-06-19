@@ -40,12 +40,23 @@ async function createOrUpdateUser(id: string, name: string) {
 async function getUserFavMovies(clerkID: string) {
   const response = await fetch(`${serverPath}/getUserMovies/${clerkID}`);
   const json = await response.json();
-  console.log(json);
   return json;
 }
 
 async function addFavoriteMovie(id: string, movie: Prisma.MovieCreateInput) {
   const response = await fetch(`${serverPath}/addFavorite`, {
+    method: "POST",
+    body: JSON.stringify({ id, movie }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  return json;
+}
+
+async function removeFavoriteMovie(id: string, movie: Prisma.MovieCreateInput) {
+  const response = await fetch(`${serverPath}/removeFavorite`, {
     method: "POST",
     body: JSON.stringify({ id, movie }),
     headers: {
@@ -62,6 +73,15 @@ function App() {
   const [movieFromSearch, setMovieSearch] = useState(null);
   const { isSignedIn, user, isLoaded } = useUser();
   const [favMovieList, setFavMovies] = useState([]);
+  const [nonFavList, setNonFav] = useState([]);
+  const [poller, setPoller] = useState(0);
+
+  // useEffect(() => {
+  //   console.log("ran");
+  //   setTimeout(() => {
+  //     setPoller(poller + 1);
+  //   }, 500);
+  // }, [poller]);
 
   let count = 0;
 
@@ -82,8 +102,17 @@ function App() {
         setFavMovies(favMovies);
       }
       setupMovies();
+      getNonFavorites();
     }
   }, [isSignedIn]);
+
+  function getNonFavorites() {
+    for (let i = 0; i < movielist.length; i++) {
+      if (favMovieList.indexOf(movielist[i]) === -1) {
+        console.log(movielist[i]);
+      }
+    }
+  }
 
   //searches for movie when search is clicked
   async function searchMovie(movieToSearch: string) {
@@ -190,7 +219,7 @@ function App() {
                       <button
                         className="btn"
                         onClick={() => {
-                          console.log("unfavorite");
+                          removeFavoriteMovie(user?.id, movie);
                         }}
                       >
                         <svg

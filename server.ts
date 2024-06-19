@@ -113,6 +113,27 @@ app.post("/addFavorite", async (req, res) => {
 
   res.json(favoriteMovie);
 });
+app.post("/removeFavorite", async (req, res) => {
+  const clerkIdentifier = req.body.id;
+  const movie = req.body.movie;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      clerkID: clerkIdentifier,
+    },
+  });
+
+  const userMovie = await prisma.userOnMovies.deleteMany({
+    where: {
+      user: user,
+      movieId: movie.id,
+    },
+  });
+
+  console.log("to Delete: ", userMovie);
+
+  res.send("HI");
+});
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
