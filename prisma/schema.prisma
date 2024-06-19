@@ -12,3 +12,31 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Movie {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  premierDate    String?
+  ratingOutOfTen Int?
+  description    String?
+  tags           String[]
+
+  UserOnMovies UserOnMovies[]
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String?
+  UserOnMovies UserOnMovies[]
+}
+
+model UserOnMovies {
+  movie Movie @relation(fields: [movieId], references: [id])
+
+  movieId    Int
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  assignedAt DateTime @default(now())
+
+  @@id([movieId, userId])
+}
