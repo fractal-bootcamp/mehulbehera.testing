@@ -7,6 +7,7 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import { useUser } from "@clerk/clerk-react";
+import { Prisma } from "@prisma/client";
 
 const serverPath = "http://localhost:3000";
 
@@ -40,6 +41,18 @@ async function getUserFavMovies(clerkID: string) {
   const response = await fetch(`${serverPath}/getUserMovies/${clerkID}`);
   const json = await response.json();
   console.log(json);
+  return json;
+}
+
+async function addFavoriteMovie(id: string, movie: Prisma.MovieCreateInput) {
+  const response = await fetch(`${serverPath}/addFavorite`, {
+    method: "POST",
+    body: JSON.stringify({ id, movie }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
   return json;
 }
 
@@ -176,7 +189,9 @@ function App() {
                     <td>
                       <button
                         className="btn"
-                        onClick={() => console.log(movie)}
+                        onClick={() => {
+                          console.log("unfavorite");
+                        }}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -230,7 +245,10 @@ function App() {
                 <td>{movie?.tags}</td>
                 <SignedIn>
                   <td>
-                    <button className="btn" onClick={() => console.log(movie)}>
+                    <button
+                      className="btn"
+                      onClick={() => addFavoriteMovie(user!.id, movie)}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"

@@ -1,5 +1,5 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import cors from "cors";
 
 const prisma = new PrismaClient();
@@ -67,17 +67,51 @@ app.get("/getUserMovies/:id", async (req, res) => {
     },
   });
 
-  console.log("user", user?.id);
-
-  const favMovies = await prisma.movie.findMany({
+  const userFavMovies = await prisma.userOnMovies.findMany({
     where: {
-      userId: user?.id,
+      user: user,
+    },
+  });
+  console.log(userFavMovies);
+
+  let favMovies = [];
+
+  async function initialize() {
+    for (let i = 0; i < userFavMovies.length; i++) {
+      const movieID = userFavMovies[i].movieId;
+      const movieToAdd = await prisma.movie.findUnique({
+        where: {
+          id: movieID,
+        },
+      });
+      //@ts-ignore
+      //favMovies.push(movieToAdd);
+      favMovies = [...favMovies, movieToAdd];
+    }
+    console.log(favMovies);
+    res.json(favMovies);
+  }
+  initialize();
+});
+
+app.post("/addFavorite", async (req, res) => {
+  const clerkIdentifier = req.body.id;
+  const movie = req.body.movie;
+
+  const u = await prisma.user.findUnique({
+    where: {
+      clerkID: clerkIdentifier,
     },
   });
 
-  console.log("movies , ", favMovies);
+  const favoriteMovie = await prisma.userOnMovies.create({
+    data: {
+      userId: u!.id,
+      movieId: movie!.id,
+    },
+  });
 
-  res.json(favMovies);
+  res.json(favoriteMovie);
 });
 
 app.listen(PORT, () => {

@@ -21,23 +21,22 @@ model Movie {
   description    String?
   tags           String[]
 
-  User   User? @relation(fields: [userId], references: [id])
-  userId Int?
+  UserOnMovies UserOnMovies[]
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  name      String?
-  clerkID   String? @unique
-  favMovies Movie[]
+  id           Int            @id @default(autoincrement())
+  name         String?
+  clerkID      String?        @unique
+  UserOnMovies UserOnMovies[]
 }
 
-// model UserOnMovies {
-//   movie      Movie?   @relation(fields: [movieId], references: [id])
-//   movieId    Int
-//   user       User?    @relation(fields: [userId], references: [id])
-//   userId     Int
-//   assignedAt DateTime @default(now())
+model UserOnMovies {
+  movie      Movie?   @relation(fields: [movieId], references: [id])
+  movieId    Int
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     Int
+  assignedAt DateTime @default(now())
 
-//   @@id([movieId, userId])
-// }
+  @@id([movieId, userId])
+}
