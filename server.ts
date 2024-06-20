@@ -113,6 +113,66 @@ app.post("/addFavorite", async (req, res) => {
 
   res.json(favoriteMovie);
 });
+
+app.post("/addATag", async (req, res) => {
+  const tag = req.body.tag;
+  const movieName = req.body.movieName;
+
+  const currentMovie = await prisma.movie.findUnique({
+    where: {
+      name: movieName,
+    },
+  });
+
+  const currentTags = currentMovie?.tags;
+  const newTags = [...currentTags!, tag];
+  console.log(newTags);
+
+  const movie = await prisma.movie.update({
+    where: {
+      name: movieName,
+    },
+    data: {
+      tags: newTags,
+    },
+  });
+
+  res.json(movie);
+});
+
+app.post("/deleteTag", async (req, res) => {
+  const tag = req.body.tag;
+  const movieName = req.body.movieName;
+
+  const currentMovie = await prisma.movie.findUnique({
+    where: {
+      name: movieName,
+    },
+  });
+
+  const currentTags = currentMovie?.tags;
+  const newTags: string[] = [];
+
+  for (let i = 0; i < currentTags!.length; i++) {
+    if (currentTags![i] !== tag) {
+      newTags.push(currentTags![i]);
+    }
+  }
+
+  console.log(newTags);
+
+  const movie = await prisma.movie.update({
+    where: {
+      name: movieName,
+    },
+    data: {
+      tags: newTags,
+    },
+  });
+
+  res.json(movie);
+});
+
 app.post("/removeFavorite", async (req, res) => {
   const clerkIdentifier = req.body.id;
   const movie = req.body.movie;
@@ -132,7 +192,7 @@ app.post("/removeFavorite", async (req, res) => {
 
   console.log("to Delete: ", userMovie);
 
-  res.send("HI");
+  res.json(userMovie);
 });
 
 app.listen(PORT, () => {
