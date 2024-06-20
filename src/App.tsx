@@ -67,6 +67,30 @@ async function removeFavoriteMovie(id: string, movie: Prisma.MovieCreateInput) {
   return json;
 }
 
+async function addATag(tag: string, movieName: string) {
+  const response = await fetch(`${serverPath}/addATag`, {
+    method: "POST",
+    body: JSON.stringify({ tag, movieName }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  return json;
+}
+
+async function deleteTag(tag: string, movieName: string) {
+  const response = await fetch(`${serverPath}/deleteTag`, {
+    method: "POST",
+    body: JSON.stringify({ tag, movieName }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  return json;
+}
+
 function App() {
   const [movielist, setMovies] = useState([]);
   const [searchText, setSearchBar] = useState("");
@@ -74,10 +98,11 @@ function App() {
   const { isSignedIn, user, isLoaded } = useUser();
   const [favMovieList, setFavMovies] = useState([]);
   const [nonFavList, setNonFav] = useState([]);
+  const [tagText, setTagText] = useState("");
+  const [tagMovieName, setTagMovieName] = useState("");
   const [poller, setPoller] = useState(0);
 
   // useEffect(() => {
-  //   console.log("ran");
   //   setTimeout(() => {
   //     setPoller(poller + 1);
   //   }, 500);
@@ -92,6 +117,19 @@ function App() {
     }
 
     initialize();
+    if (isSignedIn) {
+      createOrUpdateUser(user!.id, user!.firstName);
+      async function setupMovies() {
+        const favMovies = await getUserFavMovies(user!.id);
+        setFavMovies(favMovies);
+      }
+      setupMovies();
+      getNonFavorites();
+    }
+
+    // console.log(movielist);
+    // console.log(favMovieList);
+    // console.log(nonFavList);
   }, []);
 
   useEffect(() => {
@@ -107,11 +145,19 @@ function App() {
   }, [isSignedIn]);
 
   function getNonFavorites() {
+    const nonFavMovies = [];
+    const movieListNames = movielist.map((movie) => movie?.name);
+    const favMovieListNames = favMovieList.map((movie) => movie?.name);
+    const nonFavMoviesNames = movieListNames.filter(
+      (movieName) => !favMovieListNames?.includes(movieName)
+    );
+
     for (let i = 0; i < movielist.length; i++) {
-      if (favMovieList.indexOf(movielist[i]) === -1) {
-        console.log(movielist[i]);
+      if (nonFavMoviesNames.includes(movielist[i]?.name)) {
+        nonFavMovies.push(movielist[i]);
       }
     }
+    setNonFav(nonFavMovies);
   }
 
   //searches for movie when search is clicked
@@ -200,9 +246,8 @@ function App() {
                 <th>Rating</th>
                 <th>Priemiere Date</th>
                 <th>Tags</th>
-                <SignedIn>
-                  <th>Favorite</th>
-                </SignedIn>
+                <th>Add Tag</th>
+                <th>Favorite</th>
               </tr>
             </thead>
             <tbody>
@@ -213,32 +258,53 @@ function App() {
                   <td>{movie?.description}</td>
                   <td> {movie?.ratingOutOfTen}/10</td>
                   <td>Premiere Date: {movie?.premierDate}</td>
-                  <td>{movie?.tags}</td>
-                  <SignedIn>
-                    <td>
-                      <button
-                        className="btn"
-                        onClick={() => {
-                          removeFavoriteMovie(user?.id, movie);
-                        }}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="#000000"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                  <td>
+                    {movie?.tags.map((tag: string) => (
+                      <span className="badge">
+                        {tag}
+                        <button
+                          onClick={() => deleteTag(tag, movie?.name)}
+                          className="btn btn-sm btn-circle btn-ghost "
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                          />
-                        </svg>
-                      </button>
-                    </td>
-                  </SignedIn>
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => {
+                        setTagMovieName(movie?.name);
+                        document.getElementById("add_tag")!.showModal();
+                      }}
+                      className="btn px-5"
+                    >
+                      +
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        removeFavoriteMovie(user?.id, movie);
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="#000000"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -246,33 +312,57 @@ function App() {
         </div>
 
         <div className="divider"></div>
-      </SignedIn>
+        <div className="text-xl my-4">Non Favorites</div>
 
-      <div className="overflow-x-auto my-2">
-        <table className="table table-xs">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Title</th>
-              <th>Description</th>
-              <th>Rating</th>
-              <th>Priemiere Date</th>
-              <th>Tags</th>
-              <SignedIn>
-                <th>Favorite</th>
-              </SignedIn>
-            </tr>
-          </thead>
-          <tbody>
-            {movielist.map((movie) => (
+        <div className="overflow-x-auto my-2">
+          <table className="table table-xs">
+            <thead>
               <tr>
-                <th>{(count += 1)}</th>
-                <td>{movie?.name}</td>
-                <td>{movie?.description}</td>
-                <td> {movie?.ratingOutOfTen}/10</td>
-                <td>Premiere Date: {movie?.premierDate}</td>
-                <td>{movie?.tags}</td>
-                <SignedIn>
+                <th></th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Rating</th>
+                <th>Priemiere Date</th>
+
+                <th>Tags</th>
+                <th>Add Tag</th>
+                <th>Favorite</th>
+              </tr>
+            </thead>
+            <tbody>
+              {nonFavList.map((movie) => (
+                <tr>
+                  <th>{(count += 1)}</th>
+                  <td>{movie?.name}</td>
+                  <td>{movie?.description}</td>
+                  <td> {movie?.ratingOutOfTen}/10</td>
+                  <td>Premiere Date: {movie?.premierDate}</td>
+
+                  <td>
+                    {movie?.tags.map((tag: string) => (
+                      <span className="badge">
+                        {tag}
+                        <button
+                          onClick={() => deleteTag(tag, movie?.name)}
+                          className="btn btn-sm btn-circle btn-ghost "
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => {
+                        setTagMovieName(movie?.name);
+                        document.getElementById("add_tag")!.showModal();
+                      }}
+                      className="btn px-5"
+                    >
+                      +
+                    </button>
+                  </td>
+
                   <td>
                     <button
                       className="btn"
@@ -294,12 +384,94 @@ function App() {
                       </svg>
                     </button>
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <div className="overflow-x-auto my-2">
+          <table className="table table-xs">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Rating</th>
+                <th>Priemiere Date</th>
+
+                <th>Tags</th>
+                <SignedIn>
+                  <th>Add Tag</th>
+
+                  <th>Favorite</th>
                 </SignedIn>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {movielist.map((movie) => (
+                <tr>
+                  <th>{(count += 1)}</th>
+                  <td>{movie?.name}</td>
+                  <td>{movie?.description}</td>
+                  <td> {movie?.ratingOutOfTen}/10</td>
+                  <td>Premiere Date: {movie?.premierDate}</td>
+
+                  <td>
+                    {movie?.tags.map((tag: string) => (
+                      <span className="badge">
+                        {tag}
+                        <button
+                          onClick={() => deleteTag(tag, movie?.name)}
+                          className="btn btn-sm btn-circle btn-ghost "
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </td>
+                  <SignedIn>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setTagMovieName(movie?.name);
+                          document.getElementById("add_tag")!.showModal();
+                        }}
+                        className="btn px-5"
+                      >
+                        +
+                      </button>
+                    </td>
+
+                    <td>
+                      <button
+                        className="btn"
+                        onClick={() => addFavoriteMovie(user!.id, movie)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                      </button>
+                    </td>
+                  </SignedIn>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SignedOut>
 
       <dialog id="movie_modal" className="modal">
         <div className="modal-box">
@@ -322,27 +494,34 @@ function App() {
           <button>close</button>
         </form>
       </dialog>
+
+      <dialog id="add_tag" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg my-3">Add A Tag</h3>
+          <input
+            type="text"
+            placeholder="Type here"
+            className="input input-bordered w-full max-w-xs"
+            onChange={(e) => setTagText(e.target.value)}
+          />
+          <div className="modal-action">
+            <form method="dialog">
+              {/* if there is a button in form, it will close the modal */}
+              <button
+                onClick={() => {
+                  addATag(tagText, tagMovieName);
+                }}
+                className="btn mx-2"
+              >
+                Submit
+              </button>
+              <button className="btn">Discard</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </>
   );
 }
 
 export default App;
-
-//Acoordion
-
-// <div>
-// {movielist.map((movie) => (
-//   <div className="collapse bg-base-200">
-//     <input type="radio" name="my-accordion-1" />
-//     <div className="collapse-title text-xl font-medium">
-//       {movie?.name}
-//     </div>
-//     <div className="collapse-content">
-//       <p>Description: {movie?.description}</p>
-//       <p>Rating: {movie?.ratingOutOfTen}/10</p>
-//       <p>Premiere Date: {movie?.premierDate}</p>
-//       <p>{movie?.tags}</p>
-//     </div>
-//   </div>
-// ))}
-// </div>
