@@ -260,11 +260,11 @@ function App() {
                   <td>Premiere Date: {movie?.premierDate}</td>
                   <td>
                     {movie?.tags.map((tag: string) => (
-                      <span className="badge">
+                      <span className="badge badge-md">
                         {tag}
                         <button
                           onClick={() => deleteTag(tag, movie?.name)}
-                          className="btn btn-sm btn-circle btn-ghost "
+                          className="btn btn-sm btn-circle btn-ghost text-xs"
                         >
                           ✕
                         </button>
@@ -340,11 +340,11 @@ function App() {
 
                   <td>
                     {movie?.tags.map((tag: string) => (
-                      <span className="badge">
+                      <span className="badge badge-md">
                         {tag}
                         <button
                           onClick={() => deleteTag(tag, movie?.name)}
-                          className="btn btn-sm btn-circle btn-ghost "
+                          className="btn btn-sm btn-circle btn-ghost text-sm"
                         >
                           ✕
                         </button>
@@ -420,11 +420,11 @@ function App() {
 
                   <td>
                     {movie?.tags.map((tag: string) => (
-                      <span className="badge">
+                      <span className="badge badge-md">
                         {tag}
                         <button
                           onClick={() => deleteTag(tag, movie?.name)}
-                          className="btn btn-sm btn-circle btn-ghost "
+                          className="btn btn-sm btn-circle btn-ghost text-sm "
                         >
                           ✕
                         </button>
