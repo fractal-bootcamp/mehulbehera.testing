@@ -95,9 +95,8 @@ function App() {
   const [movielist, setMovies] = useState([]);
   const [searchText, setSearchBar] = useState("");
   const [movieFromSearch, setMovieSearch] = useState(null);
-  const { isSignedIn, user, isLoaded } = useUser();
+  const { isSignedIn, user } = useUser();
   const [favMovieList, setFavMovies] = useState([]);
-  const [nonFavList, setNonFav] = useState([]);
   const [tagText, setTagText] = useState("");
   const [tagMovieName, setTagMovieName] = useState("");
   const [poller, setPoller] = useState(0);
@@ -126,12 +125,9 @@ function App() {
       setupMovies();
       getNonFavorites();
     }
-
-    // console.log(movielist);
-    // console.log(favMovieList);
-    // console.log(nonFavList);
   }, []);
 
+  // this useEffect fetches data whenever isSigned in or poller changes
   useEffect(() => {
     if (isSignedIn) {
       createOrUpdateUser(user!.id, user!.firstName);
@@ -142,7 +138,7 @@ function App() {
       setupMovies();
       getNonFavorites();
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, poller]);
 
   function getNonFavorites() {
     const nonFavMovies = [];
@@ -157,7 +153,7 @@ function App() {
         nonFavMovies.push(movielist[i]);
       }
     }
-    setNonFav(nonFavMovies);
+    return nonFavMovies;
   }
 
   //searches for movie when search is clicked
@@ -176,23 +172,6 @@ function App() {
     <>
       <header></header>
       <div className="navbar bg-base-100">
-        <div className="flex-none">
-          <button className="btn btn-square btn-ghost">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              className="inline-block w-5 h-5 stroke-current"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              ></path>
-            </svg>
-          </button>
-        </div>
         <div className="flex-1">
           <a className="btn btn-ghost text-xl">Movie Finder</a>
         </div>
@@ -211,6 +190,7 @@ function App() {
       <div className="flex flex-row my-1 gap-1">
         <label className="input input-bordered flex flex-grow items-center gap-2">
           <input
+            id="searchBar"
             type="text"
             className="my-2 grow"
             placeholder="Search"
@@ -229,7 +209,13 @@ function App() {
             />
           </svg>
         </label>
-        <button className="btn" onClick={() => searchMovie(searchText)}>
+        <button
+          className="btn"
+          onClick={() => {
+            searchMovie(searchText);
+            document.getElementById("searchBar")!.value = "";
+          }}
+        >
           Search
         </button>
       </div>
@@ -263,7 +249,9 @@ function App() {
                       <span className="badge badge-md">
                         {tag}
                         <button
-                          onClick={() => deleteTag(tag, movie?.name)}
+                          onClick={() => {
+                            deleteTag(tag, movie?.name);
+                          }}
                           className="btn btn-sm btn-circle btn-ghost text-xs"
                         >
                           ✕
@@ -285,8 +273,16 @@ function App() {
                   <td>
                     <button
                       className="btn"
-                      onClick={() => {
-                        removeFavoriteMovie(user?.id, movie);
+                      onClick={async () => {
+                        const response = await removeFavoriteMovie(
+                          user?.id,
+                          movie
+                        );
+
+                        // const updatedMovies = updateMovies(response);
+                        // setMovies(updatedMovies);
+
+                        setPoller(poller + 1);
                       }}
                     >
                       <svg
@@ -330,7 +326,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {nonFavList.map((movie) => (
+              {getNonFavorites().map((movie) => (
                 <tr>
                   <th>{(count += 1)}</th>
                   <td>{movie?.name}</td>
@@ -343,7 +339,9 @@ function App() {
                       <span className="badge badge-md">
                         {tag}
                         <button
-                          onClick={() => deleteTag(tag, movie?.name)}
+                          onClick={() => {
+                            deleteTag(tag, movie?.name);
+                          }}
                           className="btn btn-sm btn-circle btn-ghost text-sm"
                         >
                           ✕
@@ -366,7 +364,13 @@ function App() {
                   <td>
                     <button
                       className="btn"
-                      onClick={() => addFavoriteMovie(user!.id, movie)}
+                      onClick={async () => {
+                        const response = await addFavoriteMovie(
+                          user!.id,
+                          movie
+                        );
+                        setPoller(poller + 1);
+                      }}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -479,7 +483,11 @@ function App() {
           <p>Description: {movieFromSearch?.description}</p>
           <p>Rating: {movieFromSearch?.ratingOutOfTen}/10</p>
           <p>Premiere Date: {movieFromSearch?.premierDate}</p>
-          <p>{movieFromSearch?.tags}</p>
+          <p>
+            {movieFromSearch?.tags.map((tag: string) => (
+              <span className="badge badge-md">{tag}</span>
+            ))}
+          </p>
         </div>
         <form method="dialog" className="modal-backdrop">
           <button>close</button>
@@ -499,6 +507,7 @@ function App() {
         <div className="modal-box">
           <h3 className="font-bold text-lg my-3">Add A Tag</h3>
           <input
+            id="tagInput"
             type="text"
             placeholder="Type here"
             className="input input-bordered w-full max-w-xs"
@@ -509,13 +518,21 @@ function App() {
               {/* if there is a button in form, it will close the modal */}
               <button
                 onClick={() => {
+                  document.getElementById("tagInput")!.value = "";
                   addATag(tagText, tagMovieName);
                 }}
                 className="btn mx-2"
               >
                 Submit
               </button>
-              <button className="btn">Discard</button>
+              <button
+                onClick={() => {
+                  document.getElementById("tagInput")!.value = "";
+                }}
+                className="btn"
+              >
+                Discard
+              </button>
             </form>
           </div>
         </div>

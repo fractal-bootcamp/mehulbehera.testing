@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "npx prisma migrate dev",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d",
+    "test:run": "vitest run",
+    "test:db:down": "docker compose -f docker-compose.test.yml down",
+    "test": "npm run test:db:up && npx dotenv-cli -e .env.test -- npm run db:migrate && npx dotenv-cli -e .env.test -- npm run test:run && npm run test:db:down"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.2.4",
@@ -15,7 +20,8 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "vitest": "^1.6.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.5",
