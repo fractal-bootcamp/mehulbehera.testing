@@ -24,20 +24,6 @@ app.get("/findMovie/:name", async (req, res) => {
   res.json(movie);
 });
 
-// //creates a favorite relationship between a user and movie
-// app.post("/createFav", async (req, res) => {
-//   const { movieID, userID } = req.params;
-
-//   const userFavMovie = await prisma.userOnMovies.create({
-//     data: {
-//       movieId: movieID,
-//       userId: userID,
-//     },
-//   });
-
-//   res.json(userFavMovie);
-// });
-
 //create or update user
 app.post("/createUser", async (req, res) => {
   const clerkIdentifier = req.body.id;
@@ -103,6 +89,10 @@ app.post("/addFavorite", async (req, res) => {
       clerkID: clerkIdentifier,
     },
   });
+
+  if (u === null) {
+    res.sendStatus(400);
+  }
 
   const favoriteMovie = await prisma.userOnMovies.create({
     data: {
@@ -182,6 +172,10 @@ app.post("/removeFavorite", async (req, res) => {
       clerkID: clerkIdentifier,
     },
   });
+
+  if (user === null) {
+    res.sendStatus(400);
+  }
 
   const userMovie = await prisma.userOnMovies.deleteMany({
     where: {
